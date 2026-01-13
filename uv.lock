@@ -95,6 +95,20 @@ wheels = [
 ]
 
 [[package]]
+name = "fastapi-pagination"
+version = "0.15.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "fastapi" },
+    { name = "pydantic" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a0/da/ad34e0fc98ca9731b0f76d07faeb39d525cb80440ac5814e270cb379d92a/fastapi_pagination-0.15.6.tar.gz", hash = "sha256:c59ca1aa056dccee3526953357c2d1128f988f83d3034d95ddb8de6f5a68e9f8", size = 573720, upload-time = "2026-01-11T22:15:36.385Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/28/0cf3b51115e98c0b84553b9e11ec07f59ae580bf8585eb7876fa9afe4c7a/fastapi_pagination-0.15.6-py3-none-any.whl", hash = "sha256:5c44bfaa78c1c968ca6f027b01a27c1805194c7cc8776eb84ec78235abcdaece", size = 59624, upload-time = "2026-01-11T22:15:37.746Z" },
+]
+
+[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -316,6 +330,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "beanie" },
     { name = "fastapi" },
+    { name = "fastapi-pagination" },
     { name = "motor" },
     { name = "odmantic" },
     { name = "pydantic" },
@@ -327,6 +342,7 @@ dependencies = [
 requires-dist = [
     { name = "beanie", specifier = ">=2.0.1" },
     { name = "fastapi", specifier = ">=0.128.0" },
+    { name = "fastapi-pagination", specifier = ">=0.15.6" },
     { name = "motor", specifier = ">=3.7.1" },
     { name = "odmantic", specifier = ">=1.0.2" },
     { name = "pydantic", specifier = ">=2.12.5" },
