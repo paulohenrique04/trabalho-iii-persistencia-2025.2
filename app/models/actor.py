@@ -1,12 +1,16 @@
-from typing import Optional
 from beanie import Document
 
 
 class Actor(Document):
     name: str
-    birth_date: Optional[str] = None
-    nationality: Optional[str] = None
-    biography: Optional[str] = None
-
+    birth_date: str = None
+    nationality: str = None
+    biography: str = None
+    height_cm: float = None
+    awards: list[str] = []
+    instagram: str = None
+    know_for: str = None
+    indications: list[str] = []
+    
     class Settings:
         name = "actors"
