@@ -22,22 +22,6 @@ erDiagram
         string diretor
     }
 
-    Avaliacao {
-        int id_review PK
-        int nota
-        string conteudo
-        int id_user FK
-        int id_movie FK
-    }
-
-    ListaDesejos {
-        int id_watchlist PK
-        datetime adicionado_em
-        string notas
-        int id_user FK
-        int id_movie FK
-    }
-
     Genero {
         int id_genre PK
         string nome
@@ -52,6 +36,23 @@ erDiagram
         string biografia
     }
 
+    Avaliacao {
+        int id_review PK
+        int nota
+        string conteudo
+        datetime criado_em
+        int id_user FK
+        int id_movie FK
+    }
+
+    ListaDesejos {
+        int id_watchlist PK
+        datetime adicionado_em
+        string notas
+        int id_user FK
+        int id_movie FK
+    }
+
     Filme_Genero {
         int id_filme FK
         int id_genero FK
@@ -63,10 +64,16 @@ erDiagram
         string personagem
     }
 
+    %% RELACIONAMENTOS CORRETOS para Mermaid
     Usuario ||--o{ Avaliacao : "faz"
     Filme ||--o{ Avaliacao : "recebe"
+    
     Usuario ||--o{ ListaDesejos : "possui"
-    Filme ||--o{ ListaDesejos : "está_na_lista"
-    Filme }o--o{ Genero : "possui_generos"
-    Filme }o--o{ Ator : "tem_atores"
+    Filme ||--o{ ListaDesejos : "esta na"
+    
+    Filme ||--o{ Filme_Genero : "tem genero"
+    Genero ||--o{ Filme_Genero : "categoriza"
+    
+    Filme ||--o{ Filme_Ator : "tem ator"
+    Ator ||--o{ Filme_Ator : "participa"
 ```
