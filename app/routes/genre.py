@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from beanie import PydanticObjectId
 from fastapi_pagination import Page
 from fastapi_pagination.ext.beanie import apaginate
-from app.models.genre import Genre
+from app.models.genre import Genre, GenreCreate
 
 router = APIRouter(
     prefix="/genres",
@@ -27,12 +27,17 @@ async def get_genre_by_id(genre_id: PydanticObjectId) -> Genre:
     return genre
 
 @router.post("/", response_model=Genre, status_code=201)
-async def create_genre(genre: Genre) -> Genre:
+async def create_genre(genre: GenreCreate) -> Genre:
     """
     Cria um novo gênero.
     """
-    await genre.insert()
-    return genre
+    genre_obj = Genre(**genre.model_dump())
+    await genre_obj.insert()
+    genre_inserted = await Genre.get(genre_obj.id)
+    if not genre_inserted:
+        raise HTTPException(status_code=500, detail="Erro ao criar o gênero")
+    
+    return genre_inserted
 
 @router.put("/{genre_id}", response_model=Genre)
 async def update_genre(genre_id: PydanticObjectId, genre_data: dict) -> Genre:
