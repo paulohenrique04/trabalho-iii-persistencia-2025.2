@@ -1,79 +1,81 @@
-from typing import List, Optional
-
-from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException, Query, status
-
+from beanie import PydanticObjectId
+from fastapi_pagination import Page
+from fastapi_pagination.ext.beanie import apaginate
 from app.models import Actor, Movie
 
 router = APIRouter(prefix="/actors", tags=["Atores"])
 
 
 @router.post("/", response_model=Actor, status_code=status.HTTP_201_CREATED)
-async def create_actor(actor: Actor):
+async def create_actor(actor: Actor) -> Actor:
     """Cria um novo ator"""
     await actor.insert()
     return actor
 
 
 @router.get("/{actor_id}", response_model=Actor)
-async def get_actor(actor_id: PydanticObjectId):
-    """Busca ator por ID"""
+async def get_actor_by_id(actor_id: PydanticObjectId) -> Actor:
+    """Retorna um ator pelo seu ID"""
     actor = await Actor.get(actor_id)
     if not actor:
         raise HTTPException(status_code=404, detail="Ator não encontrado")
     return actor
 
 
-@router.get("/", response_model=List[Actor])
-async def list_actors(
-    name: Optional[str] = Query(
+@router.get("/", response_model=Page[Actor])
+async def get_actors(
+    name: str | None = Query(
         None, description="Busca parcial case-insensitive no nome"
     ),
-    birth_year: Optional[int] = Query(None, description="Filtro por ano de nascimento"),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=200),
-):
-    """Lista atores com filtros e paginação"""
+    birth_year: int | None = Query(None, description="Filtro por ano de nascimento"),
+) -> Page[Actor]:
+    """
+    Retorna uma lista paginada de atores com filtros opcionais.
+    """
     query = {}
     if name:
         query["name"] = {"$regex": name, "$options": "i"}
     if birth_year:
         query["birth_year"] = birth_year
-
-    actors = await Actor.find(query).skip(skip).limit(limit).to_list()
-    return actors
+    
+    return await apaginate(Actor.find(query))
 
 
 @router.put("/{actor_id}", response_model=Actor)
-async def update_actor(actor_id: PydanticObjectId, actor_update: Actor):
-    """Atualiza ator (parcial)"""
+async def update_actor(actor_id: PydanticObjectId, actor_data: dict) -> Actor:
+    """
+    Atualiza um ator existente.
+    """
     actor = await Actor.get(actor_id)
     if not actor:
         raise HTTPException(status_code=404, detail="Ator não encontrado")
-
-    update_data = actor_update.model_dump(exclude_unset=True)
-    await actor.set(update_data)
+    
+    for key, value in actor_data.items():
+        setattr(actor, key, value)
+    
+    await actor.save()
     return actor
 
 
-@router.delete("/{actor_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_actor(actor_id: PydanticObjectId):
-    """Deleta ator"""
+@router.delete("/{actor_id}")
+async def delete_actor(actor_id: PydanticObjectId) -> dict:
+    """
+    Deleta um ator existente.
+    """
     actor = await Actor.get(actor_id)
     if not actor:
         raise HTTPException(status_code=404, detail="Ator não encontrado")
+    
     await actor.delete()
-    return None
+    return {"mensagem": "Ator deletado com sucesso"}
 
 
-@router.get("/{actor_id}/movies", response_model=List[Movie])
+@router.get("/{actor_id}/movies", response_model=Page[Movie])
 async def get_movies_by_actor(
     actor_id: PydanticObjectId,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=200),
-):
-    """Lista todos os filmes de um ator (consulta envolvendo múltiplas coleções)"""
-    movies = await Movie.find({"actors": actor_id}).skip(skip).limit(limit).to_list()
-    return movies
-    movies = await Movie.find({"actors": actor_id}).skip(skip).limit(limit).to_list()
-    return movies
+) -> Page[Movie]:
+    """
+    Lista todos os filmes de um ator (consulta envolvendo múltiplas coleções).
+    """
+    return await apaginate(Movie.find({"actors": actor_id}))
