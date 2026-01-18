@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException, Query, status
 from beanie import PydanticObjectId
+from fastapi import APIRouter, HTTPException, Query, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.beanie import apaginate
+
 from app.models import Actor, Movie
+from app.models.actor import ActorUpdate
 
 router = APIRouter(prefix="/actors", tags=["Atores"])
 
@@ -43,17 +45,17 @@ async def get_actors(
 
 
 @router.put("/{actor_id}", response_model=Actor)
-async def update_actor(actor_id: PydanticObjectId, actor_data: dict) -> Actor:
+async def update_actor(actor_id: PydanticObjectId, actor_data: ActorUpdate) -> Actor:
     """
     Atualiza um ator existente.
     """
     actor = await Actor.get(actor_id)
     if not actor:
         raise HTTPException(status_code=404, detail="Ator não encontrado")
-    
-    for key, value in actor_data.items():
+
+    for key, value in actor_data.dict(exclude_unset=True).items():
         setattr(actor, key, value)
-    
+
     await actor.save()
     return actor
 

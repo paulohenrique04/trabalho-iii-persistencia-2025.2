@@ -1,4 +1,5 @@
 from beanie import Document
+from pydantic import BaseModel
 
 
 class Actor(Document):
@@ -11,6 +12,18 @@ class Actor(Document):
     instagram: str = None
     know_for: str = None
     indications: list[str] = []
-    
+
     class Settings:
         name = "actors"
+
+
+class ActorUpdate(BaseModel):
+    name: str | None = None
+    birth_date: str | None = None
+    nationality: str | None = None
+    biography: str | None = None
+    height_cm: float | None = None
+    awards: list[str] | None = None
+    instagram: str | None = None
+    know_for: str | None = None
+    indications: list[str] | None = None

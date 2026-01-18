@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException, Query, status
 from beanie import PydanticObjectId
+from fastapi import APIRouter, HTTPException, Query, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.beanie import apaginate
-from app.models import Movie, Review
+
+from app.models import Movie, Review, User
+from app.models.review import ReviewUpdate
 
 router = APIRouter(prefix="/reviews", tags=["Reviews"])
 
@@ -44,15 +46,26 @@ async def get_reviews(
 
 
 @router.put("/{review_id}", response_model=Review)
-async def update_review(review_id: PydanticObjectId, review_data: dict) -> Review:
+async def update_review(review_id: PydanticObjectId, review_data: ReviewUpdate) -> Review:
     """Atualiza uma review existente"""
     review = await Review.get(review_id)
     if not review:
         raise HTTPException(status_code=404, detail="Review não encontrada")
 
-    for key, value in review_data.items():
-        setattr(review, key, value)
-    
+    for key, value in review_data.dict(exclude_unset=True).items():
+        if key == "movie" and value is not None:
+            movie = await Movie.get(value)
+            if not movie:
+                raise HTTPException(status_code=404, detail="Filme não encontrado")
+            review.movie = movie
+        elif key == "user" and value is not None:
+            user = await User.get(value)
+            if not user:
+                raise HTTPException(status_code=404, detail="Usuário não encontrado")
+            review.user = user
+        else:
+            setattr(review, key, value)
+
     await review.save()
     return review
 
