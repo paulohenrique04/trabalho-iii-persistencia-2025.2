@@ -1,26 +1,30 @@
-from datetime import datetime
 from beanie import PydanticObjectId
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException
 from fastapi_pagination import Page
 from fastapi_pagination.ext.beanie import apaginate
 from typing import Optional
 
-from app.models.user import User
+from app.models.user import User, UserCreate, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.post("/", response_model=User)
-async def create_user(user_data: dict):
+async def create_user(user_data: UserCreate):
     """Cria um novo usuário"""
-    user = User(**user_data)
+    user = User(**user_data.model_dump())
     await user.insert()
-    return user
+
+    user_inserted = await User.get(user.id, fetch_links=True)
+    if not user_inserted:
+        raise HTTPException(status_code=500, detail="Erro ao criar o usuário")
+    
+    return user_inserted
 
 @router.get("/{user_id}", response_model=User)
 async def get_user_by_id(user_id: PydanticObjectId):
     """a) Consulta por ID"""
-    user = await User.get(user_id)
+    user = await User.get(user_id, fetch_links=True)
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     return user
@@ -34,13 +38,13 @@ async def get_users(country: Optional[str] = None):
     return await apaginate(User.find(query))
 
 @router.put("/{user_id}", response_model=User)
-async def update_user(user_id: PydanticObjectId, user_data: dict):
+async def update_user(user_id: PydanticObjectId, user_data: UserUpdate):
     """Atualiza usuário"""
-    user = await User.get(user_id)
+    user = await User.get(user_id, fetch_links=True)
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    
-    for key, value in user_data.items():
+
+    for key, value in user_data.model_dump().items():
         if hasattr(user, key):
             setattr(user, key, value)
     

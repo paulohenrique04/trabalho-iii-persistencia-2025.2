@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import close_db, init_db
-from app.routes import actor, genre, movie, review
+from app.routes import actor, genre, movie, review, user, watchlist
 from fastapi_pagination import add_pagination
 
 logging.basicConfig(
@@ -50,8 +50,8 @@ app.include_router(actor.router)
 app.include_router(genre.router)
 app.include_router(movie.router)
 app.include_router(review.router)
-# app.include_router(user.router)
-# app.include_router(watchlist.router)
+app.include_router(user.router)
+app.include_router(watchlist.router)
 
 add_pagination(app)
 

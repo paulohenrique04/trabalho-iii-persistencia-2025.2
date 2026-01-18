@@ -1,27 +1,37 @@
 from datetime import datetime
 from beanie import PydanticObjectId
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException
 from fastapi_pagination import Page
 from fastapi_pagination.ext.beanie import apaginate
 from typing import Optional
 
-from app.models.watchlist import Watchlist
+from app.models.watchlist import Watchlist, WatchlistCreate
 from app.models.user import User
 from app.models.movie import Movie
 
 router = APIRouter(prefix="/watchlists", tags=["Watchlists"])
 
-@router.post("/", response_model=Watchlist)
-async def create_watchlist(watchlist_data: dict):
+@router.post("/", response_model=WatchlistCreate)
+async def create_watchlist(watchlist_data: WatchlistCreate):
     """Adiciona filme à watchlist"""
-    watchlist = Watchlist(**watchlist_data)
+    watchlist_data.user = await User.get(watchlist_data.user)
+    watchlist_data.movie = await Movie.get(watchlist_data.movie)
+
+    if not watchlist_data.user or not watchlist_data.movie:
+        raise HTTPException(status_code=404, detail="Usuário ou Filme não encontrado")
+    
+    watchlist = Watchlist.model_validate(watchlist_data)
     await watchlist.insert()
-    return watchlist
+
+    watchlist_inserted = await Watchlist.get(watchlist.id, fetch_links=True)
+    if not watchlist_inserted:
+        raise HTTPException(status_code=500, detail="Erro ao adicionar à watchlist")
+    return watchlist_inserted
 
 @router.get("/{watchlist_id}", response_model=Watchlist)
 async def get_watchlist_by_id(watchlist_id: PydanticObjectId):
     """a) Consulta por ID"""
-    watchlist = await Watchlist.get(watchlist_id)
+    watchlist = await Watchlist.get(watchlist_id, fetch_links=True)
     if not watchlist:
         raise HTTPException(status_code=404, detail="Watchlist não encontrada")
     return watchlist
