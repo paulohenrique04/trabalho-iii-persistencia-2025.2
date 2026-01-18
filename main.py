@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import close_db, init_db
 from app.routes import actor, genre, movie, review
-
+from fastapi_pagination import add_pagination
 
 logging.basicConfig(
     level=logging.INFO,
@@ -53,6 +53,7 @@ app.include_router(review.router)
 # app.include_router(user.router)
 # app.include_router(watchlist.router)
 
+add_pagination(app)
 
 @app.get("/")
 async def root():

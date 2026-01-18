@@ -1,4 +1,3 @@
-# user.py
 from datetime import datetime
 from beanie import Document
 from pydantic import Field

@@ -24,3 +24,11 @@ class ReviewUpdate(BaseModel):
     content: str | None = None
     title: str | None = None
     spoiler: bool | None = None
+
+class ReviewCreate(BaseModel):
+    movie: PydanticObjectId
+    user: PydanticObjectId
+    rating: float
+    content: str = None
+    title: str = None
+    spoiler: bool = False
