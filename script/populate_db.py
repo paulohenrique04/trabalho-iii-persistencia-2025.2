@@ -1,5 +1,7 @@
 import asyncio
 from datetime import date, datetime
+from random import choice, uniform
+
 from app.core.database import init_db, close_db
 from app.models.actor import Actor
 from app.models.genre import Genre
@@ -9,177 +11,266 @@ from app.models.review import Review
 from app.models.watchlist import Watchlist
 
 
-async def seed_genres():
-    genres = [
-        "Drama", "Ação", "Comédia", "Suspense", "Terror",
-        "Ficção Científica", "Romance", "Animação",
-        "Documentário", "Crime"
-    ]
-    docs = [Genre(name=g) for g in genres]
-    await Genre.insert_many(docs)
-    return docs
-
-
-async def seed_actors():
-    actors_data = [
-        # Brasileiros
-        ("Wagner Moura", "Brasil"),
-        ("Sônia Braga", "Brasil"),
-        ("Seu Jorge", "Brasil"),
-        ("Matheus Nachtergaele", "Brasil"),
-        ("Fernanda Montenegro", "Brasil"),
-        ("Rodrigo Santoro", "Brasil"),
-
-        # Internacionais
-        ("Joaquin Phoenix", "Estados Unidos"),
-        ("Leonardo DiCaprio", "Estados Unidos"),
-        ("Brad Pitt", "Estados Unidos"),
-        ("Natalie Portman", "Estados Unidos"),
-        ("Christian Bale", "Reino Unido"),
-        ("Heath Ledger", "Austrália"),
-        ("Meryl Streep", "Estados Unidos"),
-        ("Tom Hanks", "Estados Unidos"),
-        ("Al Pacino", "Estados Unidos"),
-        ("Robert De Niro", "Estados Unidos"),
-        ("Scarlett Johansson", "Estados Unidos"),
-        ("Keanu Reeves", "Canadá"),
-        ("Charlize Theron", "África do Sul"),
-        ("Denzel Washington", "Estados Unidos"),
-    ]
-
-    docs = [
-        Actor(
-            name=name,
-            nationality=country,
-            biography=f"{name} é um ator renomado.",
-            awards=[],
-            indications=[]
-        )
-        for name, country in actors_data
-    ]
-
-    await Actor.insert_many(docs)
-    return docs
-
-
-async def seed_users():
-    users = [
-        ("paulo", "paulo@email.com", "Brasil", "Fortaleza"),
-        ("ana", "ana@email.com", "Brasil", "São Paulo"),
-        ("joao", "joao@email.com", "Brasil", "Rio de Janeiro"),
-        ("maria", "maria@email.com", "Portugal", "Lisboa"),
-        ("lucas", "lucas@email.com", "Estados Unidos", "New York"),
-        ("carla", "carla@email.com", "França", "Paris"),
-        ("pedro", "pedro@email.com", "Brasil", "Recife"),
-        ("julia", "julia@email.com", "Canadá", "Toronto"),
-        ("marcos", "marcos@email.com", "Brasil", "Salvador"),
-        ("laura", "laura@email.com", "Alemanha", "Berlim"),
-    ]
-
-    docs = [
-        User(
-            username=u,
-            email=e,
-            password="hashedpassword",
-            country=c,
-            city=city,
-            created_at=datetime.utcnow()
-        )
-        for u, e, c, city in users
-    ]
-
-    await User.insert_many(docs)
-    return docs
-
-
-async def seed_movies(actors, genres):
-    movies_data = [
-        ("Cidade de Deus", date(2002, 8, 30), 130, "Fernando Meirelles"),
-        ("Tropa de Elite", date(2007, 10, 12), 115, "José Padilha"),
-        ("Central do Brasil", date(1998, 4, 3), 113, "Walter Salles"),
-        ("Carandiru", date(2003, 3, 28), 145, "Hector Babenco"),
-        ("O Auto da Compadecida", date(2000, 9, 15), 104, "Guel Arraes"),
-
-        ("Joker", date(2019, 10, 3), 122, "Todd Phillips"),
-        ("The Dark Knight", date(2008, 7, 18), 152, "Christopher Nolan"),
-        ("Inception", date(2010, 7, 16), 148, "Christopher Nolan"),
-        ("Fight Club", date(1999, 10, 15), 139, "David Fincher"),
-        ("The Matrix", date(1999, 3, 31), 136, "Lana Wachowski"),
-        ("Forrest Gump", date(1994, 7, 6), 142, "Robert Zemeckis"),
-        ("Pulp Fiction", date(1994, 10, 14), 154, "Quentin Tarantino"),
-        ("Gladiator", date(2000, 5, 5), 155, "Ridley Scott"),
-        ("The Godfather", date(1972, 3, 24), 175, "Francis Ford Coppola"),
-        ("Se7en", date(1995, 9, 22), 127, "David Fincher"),
-        ("Black Swan", date(2010, 12, 17), 108, "Darren Aronofsky"),
-        ("Interstellar", date(2014, 11, 7), 169, "Christopher Nolan"),
-        ("The Shawshank Redemption", date(1994, 9, 23), 142, "Frank Darabont"),
-        ("Whiplash", date(2014, 10, 10), 106, "Damien Chazelle"),
-        ("Parasite", date(2019, 5, 30), 132, "Bong Joon-ho"),
-    ]
-
-    docs = []
-    for title, release, duration, director in movies_data:
-        movie = Movie(
-            title=title,
-            synopsis=f"{title} é um filme aclamado pela crítica.",
-            release_date=release,
-            duration_minutes=duration,
-            director=director,
-            imdb=8.0,
-            actors=actors[:3],
-            genres=genres[:2],
-        )
-        docs.append(movie)
-
-    await Movie.insert_many(docs)
-    return docs
-
-
-async def seed_reviews(users, movies):
-    reviews = []
-    for i in range(10):
-        reviews.append(
-            Review(
-                user=users[i],
-                movie=movies[i],
-                rating=4.5,
-                title="Excelente filme",
-                content="Uma obra-prima do cinema.",
-                spoiler=False,
-            )
-        )
-
-    await Review.insert_many(reviews)
-
-
-async def seed_watchlists(users, movies):
-    watchlists = []
-    for i in range(10):
-        watchlists.append(
-            Watchlist(
-                user=users[i],
-                movie=movies[-(i + 1)],
-                notes="Quero assistir novamente",
-            )
-        )
-
-    await Watchlist.insert_many(watchlists)
-
-
-async def main():
+async def seed_database():
     await init_db()
 
-    genres = await seed_genres()
-    actors = await seed_actors()
-    users = await seed_users()
-    movies = await seed_movies(actors, genres)
+    # =====================================================
+    # GÊNEROS
+    # =====================================================
+    genres_data = [
+        "Drama",
+        "Ação",
+        "Comédia",
+        "Crime",
+        "Suspense",
+        "Romance",
+        "Ficção Científica",
+        "Terror",
+        "Documentário",
+        "Animação",
+    ]
 
-    await seed_reviews(users, movies)
-    await seed_watchlists(users, movies)
+    genres = []
+    for name in genres_data:
+        genre = Genre(name=name)
+        await genre.insert()
+        genres.append(genre)
+
+    # =====================================================
+    # ATORES (todos os campos preenchidos)
+    # =====================================================
+    actors_data = [
+        {
+            "name": "Leonardo DiCaprio",
+            "birth_date": "1974-11-11",
+            "nationality": "Americano",
+            "biography": "Ator e produtor americano vencedor do Oscar.",
+            "height_cm": 183,
+            "awards": ["Oscar", "Globo de Ouro", "BAFTA"],
+            "instagram": "https://www.instagram.com/leonardodicaprio",
+            "know_for": "Titanic",
+            "indications": ["Oscar", "Globo de Ouro"],
+        },
+        {
+            "name": "Brad Pitt",
+            "birth_date": "1963-12-18",
+            "nationality": "Americano",
+            "biography": "Ator e produtor americano.",
+            "height_cm": 180,
+            "awards": ["Oscar", "Globo de Ouro"],
+            "instagram": "https://www.instagram.com/bradpittofficial",
+            "know_for": "Clube da Luta",
+            "indications": ["Oscar"],
+        },
+        {
+            "name": "Morgan Freeman",
+            "birth_date": "1937-06-01",
+            "nationality": "Americano",
+            "biography": "Ator e narrador americano.",
+            "height_cm": 188,
+            "awards": ["Oscar"],
+            "instagram": "",
+            "know_for": "Um Sonho de Liberdade",
+            "indications": ["Oscar"],
+        },
+        {
+            "name": "Christian Bale",
+            "birth_date": "1974-01-30",
+            "nationality": "Britânico",
+            "biography": "Ator britânico conhecido por papéis intensos.",
+            "height_cm": 183,
+            "awards": ["Oscar"],
+            "instagram": "",
+            "know_for": "Batman",
+            "indications": ["Oscar", "BAFTA"],
+        },
+        {
+            "name": "Robert De Niro",
+            "birth_date": "1943-08-17",
+            "nationality": "Americano",
+            "biography": "Ator americano lendário.",
+            "height_cm": 177,
+            "awards": ["Oscar"],
+            "instagram": "",
+            "know_for": "Taxi Driver",
+            "indications": ["Oscar"],
+        },
+        {
+            "name": "Al Pacino",
+            "birth_date": "1940-04-25",
+            "nationality": "Americano",
+            "biography": "Ator americano consagrado.",
+            "height_cm": 170,
+            "awards": ["Oscar"],
+            "instagram": "",
+            "know_for": "O Poderoso Chefão",
+            "indications": ["Oscar"],
+        },
+        {
+            "name": "Fernanda Montenegro",
+            "birth_date": "1929-10-16",
+            "nationality": "Brasileira",
+            "biography": "Atriz brasileira reconhecida internacionalmente.",
+            "height_cm": 165,
+            "awards": ["Emmy Internacional"],
+            "instagram": "",
+            "know_for": "Central do Brasil",
+            "indications": ["Oscar"],
+        },
+        {
+            "name": "Selton Mello",
+            "birth_date": "1972-12-30",
+            "nationality": "Brasileiro",
+            "biography": "Ator e diretor brasileiro.",
+            "height_cm": 173,
+            "awards": ["Grande Prêmio do Cinema Brasileiro"],
+            "instagram": "https://www.instagram.com/seltonmello",
+            "know_for": "O Auto da Compadecida",
+            "indications": ["Grande Prêmio do Cinema Brasileiro"],
+        },
+        {
+            "name": "Matheus Nachtergaele",
+            "birth_date": "1969-01-03",
+            "nationality": "Brasileiro",
+            "biography": "Ator brasileiro de teatro e cinema.",
+            "height_cm": 172,
+            "awards": ["Grande Prêmio do Cinema Brasileiro"],
+            "instagram": "",
+            "know_for": "O Auto da Compadecida",
+            "indications": ["Grande Prêmio do Cinema Brasileiro"],
+        },
+        {
+            "name": "Wagner Moura",
+            "birth_date": "1976-06-27",
+            "nationality": "Brasileiro",
+            "biography": "Ator brasileiro com carreira internacional.",
+            "height_cm": 180,
+            "awards": ["Festival de Cannes"],
+            "instagram": "",
+            "know_for": "Tropa de Elite",
+            "indications": ["Emmy"],
+        },
+    ]
+
+    actors = []
+    for data in actors_data:
+        actor = Actor(**data)
+        await actor.insert()
+        actors.append(actor)
+
+    # =====================================================
+    # FILMES (todos os campos preenchidos)
+    # =====================================================
+    movies_data = [
+        {
+            "title": "Cidade de Deus",
+            "original_title": "Cidade de Deus",
+            "synopsis": "A ascensão do crime organizado em uma favela carioca.",
+            "release_date": date(2002, 8, 30),
+            "duration_minutes": 130,
+            "age_rating": "18",
+            "director": "Fernando Meirelles",
+            "imdb": 8.6,
+        },
+        {
+            "title": "Central do Brasil",
+            "original_title": "Central do Brasil",
+            "synopsis": "Uma viagem transformadora pelo interior do Brasil.",
+            "release_date": date(1998, 4, 3),
+            "duration_minutes": 113,
+            "age_rating": "12",
+            "director": "Walter Salles",
+            "imdb": 8.0,
+        },
+        {
+            "title": "Tropa de Elite",
+            "original_title": "Tropa de Elite",
+            "synopsis": "A rotina do BOPE no Rio de Janeiro.",
+            "release_date": date(2007, 10, 12),
+            "duration_minutes": 115,
+            "age_rating": "18",
+            "director": "José Padilha",
+            "imdb": 8.0,
+        },
+        {
+            "title": "Clube da Luta",
+            "original_title": "Fight Club",
+            "synopsis": "Um homem cria um clube secreto de lutas.",
+            "release_date": date(1999, 10, 15),
+            "duration_minutes": 139,
+            "age_rating": "18",
+            "director": "David Fincher",
+            "imdb": 8.8,
+        },
+        {
+            "title": "O Poderoso Chefão",
+            "original_title": "The Godfather",
+            "synopsis": "A saga da família Corleone.",
+            "release_date": date(1972, 3, 24),
+            "duration_minutes": 175,
+            "age_rating": "18",
+            "director": "Francis Ford Coppola",
+            "imdb": 9.2,
+        },
+    ]
+
+    movies = []
+    for data in movies_data:
+        movie = Movie(
+            **data,
+            actors=[choice(actors) for _ in range(3)],
+            genres=[choice(genres) for _ in range(2)],
+        )
+        await movie.insert()
+        movies.append(movie)
+
+    # =====================================================
+    # USUÁRIOS (todos os campos preenchidos)
+    # =====================================================
+    users = []
+    for i in range(10):
+        user = User(
+            username=f"user{i}",
+            email=f"user{i}@example.com",
+            password="senha123",
+            bio="Usuário fictício para testes",
+            birthdate=datetime(1995, 1, 1),
+            gender="Outro",
+            country="Brasil",
+            telephone=f"+55 11 99999-00{i}",
+            city="São Paulo",
+        )
+        await user.insert()
+        users.append(user)
+
+    # =====================================================
+    # REVIEWS
+    # =====================================================
+    for _ in range(10):
+        review = Review(
+            movie=choice(movies),
+            user=choice(users),
+            rating=round(uniform(3.0, 5.0), 1),
+            title="Ótimo filme",
+            content="História envolvente e excelente atuação.",
+            spoiler=False,
+        )
+        await review.insert()
+
+    # =====================================================
+    # WATCHLIST
+    # =====================================================
+    for _ in range(10):
+        watchlist = Watchlist(
+            user=choice(users),
+            movie=choice(movies),
+            notes="Assistir no final de semana",
+        )
+        await watchlist.insert()
 
     await close_db()
-    print("✅ Banco de dados populado com sucesso!")
+    print("✅ Seed completo executado com sucesso!")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(seed_database())
