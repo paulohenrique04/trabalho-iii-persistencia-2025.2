@@ -1,14 +1,15 @@
-from beanie import Document, Link
+from beanie import Document
 from datetime import datetime
 from pydantic import Field
-from app.models.movie import Movie
-from app.models.user import User
-
+from typing import Optional, List
 
 class Watchlist(Document):
-    user: Link[User]
-    movie: Link[Movie]
-    notes: str = None
-
+    name: str  
+    user_id: str  
+    movie_ids: List[str] = Field(default_factory=list)
+    description: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    
     class Settings:
         name = "watchlists"
