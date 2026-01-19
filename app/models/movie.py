@@ -41,6 +41,19 @@ class MovieCreate(BaseModel):
     actors: list[PydanticObjectId] = []
     genres: list[PydanticObjectId] = []
 
+class MovieUpdate(BaseModel):
+    title: str = None
+    synopsis: str = None
+    release_date: date = None
+    duration_minutes: int = None
+    age_rating: str = None
+    director: str = None
+    original_title: str = None
+    imdb: float = None
+
+    actors: list[PydanticObjectId] = None
+    genres: list[PydanticObjectId] = None
+
 class MovieByGenreItem(BaseModel):
     title: str
     original_title: str = None

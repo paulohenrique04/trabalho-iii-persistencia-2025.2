@@ -4,7 +4,9 @@ from fastapi import APIRouter, HTTPException
 from beanie import PydanticObjectId
 from fastapi_pagination import Page
 from fastapi_pagination.ext.beanie import apaginate
-from app.models.movie import Movie, MovieCreate, MoviesByGenreResponse
+from app.models.movie import Movie, MovieCreate, MoviesByGenreResponse, MovieUpdate
+from app.models.actor import Actor
+from app.models.genre import Genre
 
 router = APIRouter(
     prefix="/movies",
@@ -48,19 +50,35 @@ async def create_movie(movie: MovieCreate) -> Movie:
     return movie_inserted
 
 @router.put("/{movie_id}", response_model=Movie)
-async def update_movie(movie_id: PydanticObjectId, movie_data: dict) -> Movie:
-    """
-    Atualiza um filme existente.
-    """ 
+async def update_movie(movie_id: PydanticObjectId, movie_data: MovieUpdate) -> Movie:
     movie = await Movie.get(movie_id)
     if not movie:
         raise HTTPException(status_code=404, detail="Filme não encontrado")
-    
-    for key, value in movie_data.items():
-        setattr(movie, key, value)
-    
+
+    data = movie_data.model_dump(exclude_unset=True)
+
+    # Campos simples
+    for key, value in data.items():
+        if key not in {"actors", "genres"}:
+            setattr(movie, key, value)
+
+    # Atualiza atores
+    if "actors" in data:
+        actors = await Actor.find(
+            {"_id": {"$in": data["actors"]}}
+        ).to_list()
+        movie.actors = actors
+
+    # Atualiza gêneros
+    if "genres" in data:
+        genres = await Genre.find(
+            {"_id": {"$in": data["genres"]}}
+        ).to_list()
+        movie.genres = genres
+
     await movie.save()
     return movie
+
 
 @router.delete("/{movie_id}")
 async def delete_movie(movie_id: PydanticObjectId) -> dict:

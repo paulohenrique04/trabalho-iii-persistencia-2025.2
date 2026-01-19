@@ -58,19 +58,10 @@ classDiagram
         +Boolean spoiler
     }
 
-    class Watchlist {
-        +ObjectId _id
-        +ObjectId user_id
-        +ObjectId movie_id
-        +String notes
-    }
-
     Movie --> "*" Actor : references via actor_ids
     Movie --> "*" Genre : references via genre_ids
     Review --> "1" Movie : references via movie_id
     Review --> "1" User : references via user_id
-    Watchlist --> "1" Movie : references via movie_id
-    Watchlist --> "1" User : references via user_id
     
     note for Movie "Índice full-text no campo: title"
 ```
